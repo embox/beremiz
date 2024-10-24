@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='utf-8'?>
+<project xmlns:ns1="http://www.plcopen.org/xml/tc6_0201" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://www.plcopen.org/xml/tc6_0201">
+<fileHeader companyName="Embox" productName="Embox Function Blocks" productVersion="1.0" creationDateTime="2023-04-26T04:54:00"/>
+<contentHeader name="Embox Function Blocks" modificationDateTime="2023-04-26T04:54:00">
+<coordinateInfo>
+<fbd>
+<scaling x="0" y="0"/>
+</fbd>
+<ld>
+<scaling x="0" y="0"/>
+</ld>
+<sfc>
+<scaling x="0" y="0"/>
+</sfc>
+</coordinateInfo>
+</contentHeader>
+<types>
+<dataTypes/>
+<pous>
+
+</pous>
+</types>
+<instances>
+<configurations/>
+</instances>
+</project>

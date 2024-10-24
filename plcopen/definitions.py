@@ -48,7 +48,8 @@ LOCATIONDATATYPES = {"X": ["BOOL"],
 # -------------------------------------------------------------------------------
 
 StdTC6Libs = [(_("Standard function blocks"),   join(sd, "Standard_Function_Blocks.xml")),
-              (_("Additional function blocks"), join(sd, "Additional_Function_Blocks.xml"))]
+              (_("Additional function blocks"), join(sd, "Additional_Function_Blocks.xml")),
+              (_("Embox"),                      join(sd, "Embox_Function_Blocks.xml"))]
 
 StdFuncsCSV = join(sd, "iec_std.csv")
 
