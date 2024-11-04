@@ -846,6 +846,28 @@ class ProjectController(ConfigTreeNode, PLCControler):
 
         return True
 
+    def _Generate_PLC_ST_Embox(self):
+        # Update PLCOpenEditor ConfNode Block types before generate ST code
+        self.RefreshConfNodesBlockLists()
+
+        self.logger.write(
+            _("Generating SoftPLC IEC-61131 ST/IL/SFC code...\n"))
+        # ask PLCOpenEditor controller to write ST/IL/SFC code file
+        _program, errors, warnings = self.GenerateProgram(
+            self._getIECcodepath())
+        if len(warnings) > 0:
+            self.logger.write_warning(
+                _("Warnings in ST/IL/SFC code generator :\n"))
+            for warning in warnings:
+                self.logger.write_warning("%s\n" % warning)
+        if len(errors) > 0:
+            # Failed !
+            self.logger.write_error(
+                _("Error in ST/IL/SFC code generator :\n%s\n") % errors[0])
+            return False
+
+        return True
+
     def _Compile_ST_to_SoftPLC(self):
         iec2c_libpath = self.iec2c_cfg.getLibPath()
         if iec2c_libpath is None:
@@ -1219,6 +1241,27 @@ class ProjectController(ConfigTreeNode, PLCControler):
         # Update GUI status about need for transfer
         self.CompareLocalAndRemotePLC()
         return True
+
+    def _Build_Embox(self):
+        if self.AppFrame is not None:
+            self.AppFrame.ClearErrors()
+        self._CloseView(self._IECCodeView)
+
+        buildpath = self._getBuildPath()
+
+        # Eventually create build dir
+        if not os.path.exists(buildpath):
+            os.mkdir(buildpath)
+
+        self.logger.flush()
+        self.logger.write(_("Start build in %s\n") % buildpath)
+
+        # Generate ST code for use in Embox
+        STGenRes = self._Generate_PLC_ST_Embox()
+        if STGenRes:
+            self.UpdateButtons()
+            self.logger.write(_("Successfully built.\n"))
+        return STGenRes
 
     def _Generate_runtime(self):
         buildpath = self._getBuildPath()
@@ -2043,7 +2086,7 @@ class ProjectController(ConfigTreeNode, PLCControler):
             "bitmap":    "Build",
             "name":    _("Build"),
             "tooltip": _("Build project into build folder"),
-            "method":   "_Build"
+            "method":   "_Build_Embox"
         },
         {
             "bitmap":    "Clean",
