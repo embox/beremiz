@@ -846,6 +846,28 @@ class ProjectController(ConfigTreeNode, PLCControler):
 
         return True
 
+    def _Generate_PLC_ST_Embox(self):
+        # Update PLCOpenEditor ConfNode Block types before generate ST code
+        self.RefreshConfNodesBlockLists()
+
+        self.logger.write(
+            _("Generating SoftPLC IEC-61131 ST/IL/SFC code...\n"))
+        # ask PLCOpenEditor controller to write ST/IL/SFC code file
+        _program, errors, warnings = self.GenerateProgram(
+            self._getIECcodepath())
+        if len(warnings) > 0:
+            self.logger.write_warning(
+                _("Warnings in ST/IL/SFC code generator :\n"))
+            for warning in warnings:
+                self.logger.write_warning("%s\n" % warning)
+        if len(errors) > 0:
+            # Failed !
+            self.logger.write_error(
+                _("Error in ST/IL/SFC code generator :\n%s\n") % errors[0])
+            return False
+
+        return True
+
     def _Compile_ST_to_SoftPLC(self):
         iec2c_libpath = self.iec2c_cfg.getLibPath()
         if iec2c_libpath is None:
@@ -1179,6 +1201,13 @@ class ProjectController(ConfigTreeNode, PLCControler):
 
         self.logger.flush()
         self.logger.write(_("Start build in %s\n") % buildpath)
+
+        # Generate only ST code for use in Embox
+        STGenRes = self._Generate_PLC_ST_Embox()
+        if STGenRes:
+            self.UpdateButtons()
+            self.logger.write(_("Successfully built.\n"))
+        return STGenRes
 
         # Generate SoftPLC IEC code
         IECGenRes = self._Generate_SoftPLC()
