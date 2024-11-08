@@ -1202,12 +1202,30 @@ class ProjectController(ConfigTreeNode, PLCControler):
         self.logger.flush()
         self.logger.write(_("Start build in %s\n") % buildpath)
 
+        targetname = self.GetTarget().getcontent().getLocalTag()
+
+        if targetname == "Embox":
         # Generate only ST code for use in Embox
-        STGenRes = self._Generate_PLC_ST_Embox()
-        if STGenRes:
+            STGenRes = self._Generate_PLC_ST_Embox()
             self.UpdateButtons()
+
+            if not STGenRes:
+                self.logger.write_error(_("ST code generation failed !\n"))
+                return False
+            
+            # try:
+            #     if not builder.build():
+            #         self.logger.write_error(_("Embox target Build failed.\n"))
+            #         return False
+            # except Exception:
+            #     builder.ResetBinaryMD5()
+            #     self.logger.write_error(_("Embox target Build crashed !\n"))
+            #     self.logger.write_error(traceback.format_exc())
+            #     return False
+
             self.logger.write(_("Successfully built.\n"))
-        return STGenRes
+            return True
+
 
         # Generate SoftPLC IEC code
         IECGenRes = self._Generate_SoftPLC()
