@@ -1213,15 +1213,16 @@ class ProjectController(ConfigTreeNode, PLCControler):
                 self.logger.write_error(_("ST code generation failed !\n"))
                 return False
             
-            # try:
-            #     if not builder.build():
-            #         self.logger.write_error(_("Embox target Build failed.\n"))
-            #         return False
-            # except Exception:
-            #     builder.ResetBinaryMD5()
-            #     self.logger.write_error(_("Embox target Build crashed !\n"))
-            #     self.logger.write_error(traceback.format_exc())
-            #     return False
+            builder = self.GetBuilder()
+            try:
+                if not builder.build():
+                    self.logger.write_error(_("Embox target Build failed.\n"))
+                    return False
+            except Exception:
+                builder.ResetBinaryMD5()
+                self.logger.write_error(_("Embox target Build crashed !\n"))
+                self.logger.write_error(traceback.format_exc())
+                return False
 
             self.logger.write(_("Successfully built.\n"))
             return True
