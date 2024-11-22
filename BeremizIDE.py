@@ -251,15 +251,15 @@ class Beremiz(IDEFrame, LocalRuntimeMixin):
         parent.AppendSeparator()
         parent.AppendSubMenu(self.TutorialsProjectsMenu, _("&Tutorials and Examples"))
 
-        exemples_dir = Bpath("exemples")
-        project_list = sorted(os.listdir(exemples_dir))
+        examples_dir = Bpath("examples_embox")
+        project_list = sorted(os.listdir(examples_dir))
 
         for idx, dirname  in enumerate(project_list):
             text = '&%d: %s' % (idx + 1, dirname)
 
             item = self.TutorialsProjectsMenu.Append(wx.ID_ANY, text, '')
 
-            projectpath = os.path.join(exemples_dir, dirname)
+            projectpath = os.path.join(examples_dir, dirname)
 
             def OpenExemple(event, projectpath=projectpath):
                 if self.CTR is not None and not self.CheckSaveBeforeClosing():
