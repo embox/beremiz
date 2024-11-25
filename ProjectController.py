@@ -844,28 +844,6 @@ class ProjectController(ConfigTreeNode, PLCControler):
 
         return True
 
-    def _Generate_PLC_ST_Embox(self):
-        # Update PLCOpenEditor ConfNode Block types before generate ST code
-        self.RefreshConfNodesBlockLists()
-
-        self.logger.write(
-            _("Generating SoftPLC IEC-61131 ST/IL/SFC code...\n"))
-        # ask PLCOpenEditor controller to write ST/IL/SFC code file
-        _program, errors, warnings = self.GenerateProgram(
-            self._getIECcodepath())
-        if len(warnings) > 0:
-            self.logger.write_warning(
-                _("Warnings in ST/IL/SFC code generator :\n"))
-            for warning in warnings:
-                self.logger.write_warning("%s\n" % warning)
-        if len(errors) > 0:
-            # Failed !
-            self.logger.write_error(
-                _("Error in ST/IL/SFC code generator :\n%s\n") % errors[0])
-            return False
-
-        return True
-
     def _Compile_ST_to_SoftPLC(self):
         iec2c_libpath = self.iec2c_cfg.getLibPath()
         if iec2c_libpath is None:
@@ -1240,7 +1218,7 @@ class ProjectController(ConfigTreeNode, PLCControler):
         self.CompareLocalAndRemotePLC()
         return True
 
-    def _Build_Embox(self):
+    def _Generate_ST_Embox(self):
         if self.AppFrame is not None:
             self.AppFrame.ClearErrors()
         self._CloseView(self._IECCodeView)
@@ -1254,12 +1232,28 @@ class ProjectController(ConfigTreeNode, PLCControler):
         self.logger.flush()
         self.logger.write(_("Start build in %s\n") % buildpath)
 
-        # Generate ST code for use in Embox
-        STGenRes = self._Generate_PLC_ST_Embox()
-        if STGenRes:
-            self.UpdateButtons()
-            self.logger.write(_("Successfully built.\n"))
-        return STGenRes
+        # Update PLCOpenEditor ConfNode Block types before generate ST code
+        self.RefreshConfNodesBlockLists()
+
+        self.logger.write(
+            _("Generating SoftPLC IEC-61131 ST/IL/SFC code...\n"))
+        # ask PLCOpenEditor controller to write ST/IL/SFC code file
+        _program, errors, warnings = self.GenerateProgram(
+            self._getIECcodepath())
+        if len(warnings) > 0:
+            self.logger.write_warning(
+                _("Warnings in ST/IL/SFC code generator :\n"))
+            for warning in warnings:
+                self.logger.write_warning("%s\n" % warning)
+        if len(errors) > 0:
+            # Failed !
+            self.logger.write_error(
+                _("Error in ST/IL/SFC code generator :\n%s\n") % errors[0])
+            return False
+
+        self.UpdateButtons()
+        self.logger.write(_("Successfully built.\n"))
+        return True
 
     def _Generate_runtime(self):
         buildpath = self._getBuildPath()
@@ -1370,7 +1364,7 @@ class ProjectController(ConfigTreeNode, PLCControler):
         dlg.ShowModal()
         dlg.Destroy()
 
-    def _showIECcode(self):
+    def _editIECcode(self):
         self._OpenView("IEC code")
 
     _IECRawCodeView = None
@@ -1391,18 +1385,14 @@ class ProjectController(ConfigTreeNode, PLCControler):
     def _OpenView(self, name=None, onlyopened=False):
         if name == "IEC code":
             if not self._IECCodeView:
-                plc_file = self._getIECcodepath()
+                controler = MiniTextControler(self._getIECcodepath(), self)
 
                 self._IECCodeView = IECCodeViewer(
-                    self.AppFrame.TabsOpened, "", self.AppFrame, None, instancepath=name)
+                    self.AppFrame.TabsOpened, "", self.AppFrame, controler, instancepath=name)
                 self._IECCodeView.SetTextSyntax("ALL")
                 self._IECCodeView.SetKeywords(IEC_KEYWORDS)
-                try:
-                    text = open(plc_file).read()
-                except Exception:
-                    text = '(* No IEC code have been generated at that time ! *)'
-                self._IECCodeView.SetText(text=text)
-                self._IECCodeView.Editor.SetReadOnly(True)
+                self._IECCodeView.RefreshView()
+                self._IECCodeView.Editor.IndicatorSetForeground(0, wx.WHITE)
                 self._IECCodeView.SetIcon(GetBitmap("ST"))
                 setattr(self._IECCodeView, "_OnClose", self.OnCloseEditor)
 
@@ -1511,8 +1501,7 @@ class ProjectController(ConfigTreeNode, PLCControler):
         self.UpdateButtons()
 
     def _UpdateButtons(self):
-        self.EnableMethod("_Clean", os.path.exists(self._getBuildPath()))
-        self.ShowMethod("_showIECcode", os.path.isfile(self._getIECcodepath()))
+        self.ShowMethod("_editIECcode", os.path.isfile(self._getIECcodepath()))
         if self.AppFrame is not None and not self.UpdateMethodsFromPLCStatus():
             self.AppFrame.RefreshStatusToolBar()
 
@@ -1528,27 +1517,27 @@ class ProjectController(ConfigTreeNode, PLCControler):
         "_Run": False,
         "_Stop": False,
         "_Transfer": False,
-        "_Connect": True,
+        "_Connect": False,
         "_Repair": False,
         "_Disconnect": False
     }
 
     MethodsFromStatus = {
         PlcStatus.Started:      {"_Stop": True,
-                                 "_Transfer": True,
+                                 "_Transfer": False,
                                  "_Connect": False,
                                  "_Disconnect": True},
         PlcStatus.Stopped:      {"_Run": True,
                                  "_Transfer": True,
                                  "_Connect": False,
-                                 "_Disconnect": True,
-                                 "_Repair": True},
-        PlcStatus.Empty:        {"_Transfer": True,
+                                 "_Disconnect": False,
+                                 "_Repair": False},
+        PlcStatus.Empty:        {"_Transfer": False,
                                  "_Connect": False,
-                                 "_Disconnect": True},
+                                 "_Disconnect": False},
         PlcStatus.Broken:       {"_Connect": False,
-                                 "_Repair": True,
-                                 "_Disconnect": True},
+                                 "_Repair": False,
+                                 "_Disconnect": False},
         PlcStatus.Disconnected: {},
     }
 
@@ -2081,81 +2070,85 @@ class ProjectController(ConfigTreeNode, PLCControler):
 
     StatusMethods = [
         {
-            "bitmap":    "Build",
-            "name":    _("Build"),
-            "tooltip": _("Build project into build folder"),
-            "method":   "_Build_Embox"
-        },
-        {
-            "bitmap":    "Clean",
-            "name":    _("Clean"),
-            "tooltip": _("Clean project build folder"),
-            "method":   "_Clean",
-            "enabled":    False,
-        },
-        {
-            "bitmap":    "Run",
-            "name":    _("Run"),
-            "tooltip": _("Start PLC"),
-            "method":   "_Run",
-            "shown":      False,
-        },
-        {
-            "bitmap":    "Stop",
-            "name":    _("Stop"),
-            "tooltip": _("Stop Running PLC"),
-            "method":   "_Stop",
-            "shown":      False,
-        },
-        {
-            "bitmap":    "Connect",
-            "name":    _("Connect"),
-            "tooltip": _("Connect to the target PLC"),
-            "method":   "_Connect"
-        },
-        {
-            "bitmap":    "Transfer",
-            "name":    _("Transfer"),
-            "tooltip": _("Transfer PLC"),
-            "method":   "_Transfer",
-            "shown":      False,
-        },
-        {
-            "bitmap":    "Disconnect",
-            "name":    _("Disconnect"),
-            "tooltip": _("Disconnect from PLC"),
-            "method":   "_Disconnect",
-            "shown":      False,
-        },
-        {
-            "bitmap":    "Repair",
-            "name":    _("Repair"),
-            "tooltip": _("Repair broken PLC"),
-            "method":   "_Repair",
-            "shown":      False,
-        },
-        {
-            "bitmap":    "IDManager",
-            "name":    _("ID Manager"),
-            "tooltip": _("Manage secure connection identities"),
-            "method":   "_showIDManager",
-        },
-        {
             "bitmap":    "ShowIECcode",
+            "name":    _("Gen IEC code"),
+            "tooltip": _("Generate ST program into build folder"),
+            "method":   "_Generate_ST_Embox",
+            "enabled":    True,
+        },
+        {
+            "bitmap":    "editIECrawcode",
             "name":    _("Show code"),
             "tooltip": _("Show IEC code generated by PLCGenerator"),
-            "method":   "_showIECcode",
+            "method":   "_editIECcode",
             "shown":      False,
         },
+        # {
+        #     "bitmap":    "Build",
+        #     "name":    _("Build Embox"),
+        #     "tooltip": _("Build project into build folder"),
+        #     "method":   "_Build_Embox",
+        #     "shown":      False, 
+        # },
+        # {
+        #     "bitmap":    "Clean",
+        #     "name":    _("Build Embox"),
+        #     "tooltip": _("Clean project build folder"),
+        #     "method":   "_Clean_Embox",
+        #     "enabled":    False,
+        # },
+        # {
+        #     "bitmap":    "Run",
+        #     "name":    _("Run"),
+        #     "tooltip": _("Start PLC"),
+        #     "method":   "_Run",
+        #     "shown":      False,
+        # },
+        # {
+        #     "bitmap":    "Stop",
+        #     "name":    _("Stop"),
+        #     "tooltip": _("Stop Running PLC"),
+        #     "method":   "_Stop",
+        #     "shown":      False,
+        # },
+        # {
+        #     "bitmap":    "Connect",
+        #     "name":    _("Connect"),
+        #     "tooltip": _("Connect to the target PLC"),
+        #     "method":   "_Connect",
+        #     "shown":      False,
+        # },
+        # {
+        #     "bitmap":    "Transfer",
+        #     "name":    _("Transfer"),
+        #     "tooltip": _("Transfer PLC"),
+        #     "method":   "_Transfer",
+        #     "shown":      False,
+        # },
+        # {
+        #     "bitmap":    "Disconnect",
+        #     "name":    _("Disconnect"),
+        #     "tooltip": _("Disconnect from PLC"),
+        #     "method":   "_Disconnect",
+        #     "shown":      False,
+        # },
+        # {
+        #     "bitmap":    "Repair",
+        #     "name":    _("Repair"),
+        #     "tooltip": _("Repair broken PLC"),
+        #     "method":   "_Repair",
+        #     "shown":      False,
+        # },
+        # {
+        #     "bitmap":    "IDManager",
+        #     "name":    _("ID Manager"),
+        #     "tooltip": _("Manage secure connection identities"),
+        #     "method":   "_showIDManager",
+        #     "shown":      False,
+        # },
     ]
 
     ConfNodeMethods = [
-        {
-            "bitmap":    "editIECrawcode",
-            "name":    _("Raw IEC code"),
-            "tooltip": _("Edit raw IEC code added to code generated by PLCGenerator"),
-            "method":   "_editIECrawcode"
-        },
         {
             "bitmap":    "ManageFolder",
             "name":    _("Project Files"),

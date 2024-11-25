@@ -123,8 +123,7 @@ class PLCOpenEditor(IDEFrame):
                                (wx.ID_OPEN, "open", _('Open'), None),
                                (wx.ID_SAVE, "save", _('Save'), None),
                                (wx.ID_SAVEAS, "saveas", _('Save As...'), None),
-                               (wx.ID_PRINT, "print", _('Print'), None),
-                               (ID_PLCOPENEDITORFILEMENUGENERATE, "Build", _('Generate Program'), None)])
+                               (wx.ID_PRINT, "print", _('Print'), None)])
 
     def _init_coll_HelpMenu_Items(self, parent):
         def handler(event):

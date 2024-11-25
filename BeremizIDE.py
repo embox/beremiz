@@ -355,12 +355,7 @@ class Beremiz(IDEFrame, LocalRuntimeMixin):
 
         self.methodLock = Lock()
 
-        for method, shortcut in [("Stop",     wx.WXK_F4),
-                                 ("Run",      wx.WXK_F5),
-                                 ("Transfer", wx.WXK_F6),
-                                 ("Connect",  wx.WXK_F7),
-                                 ("Clean",    wx.WXK_F9),
-                                 ("Build",    wx.WXK_F11)]:
+        for method, shortcut in []:
             def OnMethodGen(obj, meth):
                 def OnMethod(evt):
                     if obj.CTR is not None:
