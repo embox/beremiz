@@ -208,8 +208,6 @@ def GetProjectControllerXSD():
               </xsd:complexType>
             </xsd:element>""") if len(features.libraries) > 0 else '') + """
           </xsd:sequence>
-          <xsd:attribute name="URI_location" type="xsd:string" use="optional" default=""/>
-          <xsd:attribute name="Disable_Extensions" type="xsd:boolean" use="optional" default="false"/>
         </xsd:complexType>
       </xsd:element>
     </xsd:schema>
