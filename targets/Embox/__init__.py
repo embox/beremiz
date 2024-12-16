@@ -18,7 +18,7 @@ class Embox_target:
         self.Mybuilder.save(path_to_Mybuild)
         for CTNInstance in self.CTRInstance.IterChildren():
             if CTNInstance.CTNType == "modbus":
-                print(CTNInstance.GetIPServerPortNumbers())
-                print(CTNInstance.GetConfigNames())
+                CTNInstance.CTNGenerate_C(self.buildpath, [])
+
 
         return True
