@@ -435,6 +435,7 @@ class RootClass(object):
         server_node_list = []
         server_memarea_list = []
         loc_vars = []
+        loc_vars_init = []
         loc_vars_list = []  # list of variables already declared in C code!
         for child in self.IECSortedChildren():
             # print "<<<<<<<<<<<<<"
@@ -449,56 +450,42 @@ class RootClass(object):
                 if new_node is None:
                     return [], "", False
                                 
-                #        We currently add 4 flags/counters to each Modbus server/slave
-                #
-                #        We add the Modbus read/write counter/flag to each Modbus slave/server
-                #        to allow the user program to determine if the slave is being actively
-                #        read from or written by by a remote Modbus client.
-                for iecvar in child.GetLocations():
-                    #print "child" + repr(iecvar)
-                    if (len(iecvar["LOC"]) == 3) and (str(iecvar["NAME"]) not in loc_vars_list):
-                        # Add if it is a "Modbus Read Request Counter" (mapped onto %MDa.b.0), so last number is a '0'
-                        if iecvar["LOC"][2] == 0:
-                            loc_vars.append("u32 *" + str(iecvar["NAME"]) + " = &server_nodes[%d].mem_area.flag_read_req_counter;" % (server_id))
-                            loc_vars_list.append(str(iecvar["NAME"]))
-                        # Add if it is a "Modbus Write Request Counter" (mapped onto %MDa.b.1), so last number is a '1'
-                        if iecvar["LOC"][2] == 1:
-                            loc_vars.append("u32 *" + str(iecvar["NAME"]) + " = &server_nodes[%d].mem_area.flag_write_req_counter;" % (server_id))
-                            loc_vars_list.append(str(iecvar["NAME"]))
-                        # Add if it is a "Modbus Read Request Flag" (mapped onto %MDa.b.2), so last number is a '2'
-                        if iecvar["LOC"][2] == 2:
-                            loc_vars.append("u8 *" + str(iecvar["NAME"]) + " = &server_nodes[%d].mem_area.flag_read_req_flag;" % (server_id))
-                            loc_vars_list.append(str(iecvar["NAME"]))
-                        # Add if it is a "Modbus Write Request Counter" (mapped onto %MDa.b.3), so last number is a '3'
-                        if iecvar["LOC"][2] == 3:
-                            loc_vars.append("u8 *" + str(iecvar["NAME"]) + " = &server_nodes[%d].mem_area.flag_write_req_flag;" % (server_id))
-                            loc_vars_list.append(str(iecvar["NAME"]))
-    
                 for subchild in child.IECSortedChildren():
                     new_memarea = GetTCPServerMemAreaPrinted(self, subchild, nodeid)
                     
                     if new_memarea is None:
                         return [], "", False
                     server_memarea_list.append(new_memarea)
+                    location = subchild.GetCurrentLocation()
+                    start_address = int(GetCTVal(subchild, 2))
+                    number = int(GetCTVal(subchild, 1))
                     function = subchild.GetParamsAttributes()[0]["children"][0]["value"]
                     # 'tab_bits', 'tab_input_bits', 'tab_registers' or 'tab_input_registers'
                     memarea = modbus_memtype_dict[function][1]
-                    for iecvar in subchild.GetLocations():
-                        if len(iecvar["LOC"]) == 4:
-                            #print "subchild" + repr(iecvar)
-                            absloute_address = iecvar["LOC"][3]
-                            start_address = int(GetCTVal(subchild, 2))
-                            relative_addr = absloute_address - start_address
-                            # test if relative address in request specified range
-                            if relative_addr in range(int(GetCTVal(subchild, 1))):
-                                if str(iecvar["NAME"]) not in loc_vars_list:
-                                    loc_vars.append("u16 *" + str(iecvar["NAME"]) + " = &server_nodes[%d].mem_area.%s[%d];" % (
-                                        server_id, memarea, absloute_address))
-                                    loc_vars_list.append(str(iecvar["NAME"]))
+                    loc_adr = "__"+ modbus_memtype_dict[function][5] + modbus_memtype_dict[function][6] + "_".join(map(str, location)) + "_"
+                    _type = "uint16_t *" if memarea in ("tab_registers", "tab_input_registers") else "uint18_t *"
+                    for var in range(start_address, start_address + number):
+                        var_name = loc_adr + str(var)
+                        loc_vars.append(_type + var_name + ";")
+                        loc_vars_init.append(var_name + " = &server_nodes[%d].mem_area.%s[%d];" % (
+                                        server_id, memarea, var - start_address))
+                    # for iecvar in subchild.GetLocations():
+                    #     if len(iecvar["LOC"]) == 4:
+                    #         #print "subchild" + repr(iecvar)
+                    #         absloute_address = iecvar["LOC"][3]
+                            
+                    #         relative_addr = absloute_address - start_address
+                    #         # test if relative address in request specified range
+                    #         if relative_addr in range(int(GetCTVal(subchild, 1))):
+                    #             if str(iecvar["NAME"]) not in loc_vars_list:
+                    #                 loc_vars.append( _type + str(iecvar["NAME"]) + " = &server_nodes[%d].mem_area.%s[%d];" % (
+                    #                     server_id, memarea, absloute_address))
+                    #                 loc_vars_list.append(str(iecvar["NAME"]))
                
                 server_id += 1
 
         loc_dict["loc_vars"] = "\n".join(loc_vars)
+        loc_dict["loc_vars_init"] = "  \\ \n".join(loc_vars_init)
         loc_dict["server_nodes_params"] = ",\n\n".join(server_node_list)
         loc_dict["tcpserver_node_count"] = str(tcpserver_node_count)
         loc_dict["max_remote_tcpclient"] = int(

@@ -28,13 +28,10 @@
 typedef struct _server_node_t {
     const char *ip_adress;
     uint16_t port;
-    u8		slave_id;
+    uint8_t slave_id;
     modbus_mapping_t mem_area;
     modbus_t *ctx;
 } server_node_t;
-
-
-
 
 
 
@@ -59,4 +56,6 @@ static server_node_t server_nodes[NUMBER_OF_SERVER_NODES] = {
 /*******************/
 
 %(loc_vars)s
+
+#define LOC_VARS_INIT %(loc_vars_init)s
 
