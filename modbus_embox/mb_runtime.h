@@ -12,7 +12,7 @@
  *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser 
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser
  * General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
@@ -24,8 +24,8 @@
 
 #include "modbus.h"
 
-
-typedef struct _server_node_t {
+typedef struct _server_node_t
+{
     const char *ip_adress;
     uint16_t port;
     uint8_t slave_id;
@@ -33,29 +33,21 @@ typedef struct _server_node_t {
     modbus_t *ctx;
 } server_node_t;
 
-
-
 /* Values for instance %(locstr)s of the modbus plugin */
 
-#define NUMBER_OF_TCPSERVER_NODES %(tcpserver_node_count)s
+#define NUMBER_OF_TCPSERVER_NODES % (tcpserver_node_count)s
 
 #define NUMBER_OF_SERVER_NODES NUMBER_OF_TCPSERVER_NODES
 
-
 /*initialization following all parameters given by user in application*/
 
-
-
 static server_node_t server_nodes[NUMBER_OF_SERVER_NODES] = {
-%(server_nodes_params)s
-}
-;
+    % (server_nodes_params)s};
 
 /*******************/
 /*located variables*/
 /*******************/
 
-%(loc_vars)s
+% (loc_vars)s
 
-#define LOC_VARS_INIT %(loc_vars_init)s
-
+#define LOC_VARS_INIT % (loc_vars_init)s
