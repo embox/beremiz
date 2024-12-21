@@ -475,8 +475,7 @@ class RootClass(object):
         loc_dict["loc_vars_init"] = "  \\ \n".join(loc_vars_init)
         loc_dict["server_nodes_params"] = ",\n\n".join(server_node_list)
         loc_dict["tcpserver_node_count"] = str(tcpserver_node_count)
-        loc_dict["max_remote_tcpclient"] = int(
-            self.GetParamsAttributes()[0]["children"][0]["value"])
+        #loc_dict["max_remote_tcpclient"] = int(self.GetParamsAttributes()[0]["children"][0]["value"])
 
         # get template file content into a string, format it with dict
         # and write it to proper .h file
