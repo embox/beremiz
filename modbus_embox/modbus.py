@@ -463,25 +463,12 @@ class RootClass(object):
                     # 'tab_bits', 'tab_input_bits', 'tab_registers' or 'tab_input_registers'
                     memarea = modbus_memtype_dict[function][1]
                     loc_adr = "__"+ modbus_memtype_dict[function][5] + modbus_memtype_dict[function][6] + "_".join(map(str, location)) + "_"
-                    _type = "uint16_t *" if memarea in ("tab_registers", "tab_input_registers") else "uint18_t *"
+                    _type = "INT *" if memarea in ("tab_registers", "tab_input_registers") else "BOOL *"
                     for var in range(start_address, start_address + number):
                         var_name = loc_adr + str(var)
                         loc_vars.append(_type + var_name + ";")
                         loc_vars_init.append(var_name + " = &server_nodes[%d].mem_area.%s[%d];" % (
                                         server_id, memarea, var - start_address))
-                    # for iecvar in subchild.GetLocations():
-                    #     if len(iecvar["LOC"]) == 4:
-                    #         #print "subchild" + repr(iecvar)
-                    #         absloute_address = iecvar["LOC"][3]
-                            
-                    #         relative_addr = absloute_address - start_address
-                    #         # test if relative address in request specified range
-                    #         if relative_addr in range(int(GetCTVal(subchild, 1))):
-                    #             if str(iecvar["NAME"]) not in loc_vars_list:
-                    #                 loc_vars.append( _type + str(iecvar["NAME"]) + " = &server_nodes[%d].mem_area.%s[%d];" % (
-                    #                     server_id, memarea, absloute_address))
-                    #                 loc_vars_list.append(str(iecvar["NAME"]))
-               
                 server_id += 1
 
         loc_dict["loc_vars"] = "\n".join(loc_vars)
