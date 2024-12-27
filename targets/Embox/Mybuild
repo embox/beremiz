@@ -1,0 +1,16 @@
+package project.%(softplc_type)s.cmd
+
+@AutoCmd
+@Cmd(name="plc_run", help="")
+@Build(stage=2)
+@BuildDepends(project.%(softplc_type)s.iecsup)
+%(build_deps)s
+module %(module_name)s {
+	%(headers)s
+
+	source "plc.st"
+
+	@NoRuntime depends project.%(softplc_type)s.iecsup
+	@NoRuntime depends project.softplc.ieclib.led
+	%(deps)s
+}

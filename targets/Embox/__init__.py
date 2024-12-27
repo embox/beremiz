@@ -14,11 +14,12 @@ class Embox_target:
             self.md5key = None
 
     def build(self):
-        path_to_Mybuild = os.path.join(self.buildpath, "Mybuild")
-        self.Mybuilder.save(path_to_Mybuild)
         for CTNInstance in self.CTRInstance.IterChildren():
             if CTNInstance.CTNType == "modbus":
+                self.Mybuilder.modbus_flag = True
                 CTNInstance.CTNGenerate_C(self.buildpath, [])
-
+        
+        path_to_Mybuild = os.path.join(self.buildpath, "Mybuild")
+        self.Mybuilder.save(path_to_Mybuild)
 
         return True

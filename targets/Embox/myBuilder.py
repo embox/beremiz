@@ -1,22 +1,28 @@
+import os
+
+
 class MybuildBuilder:
     def __init__(self, programm_name) -> None:
-        self.package_name = "beremiz.softplc"
-        self.annotations = [
-            "@AutoCmd", f"@Cmd(name=\"plc_run\", help=\"\")", "@BuildDepends(project.softplc.iecsup)"]
         self.module_name = programm_name.replace(" ", "_")
-        self.sources = ["plc.st"]
-        self.dependencies = [(False, "project.softplc.iecsup"),
-                             (False, "project.softplc.ieclib.leddrv")]
-
-    def __str__(self):
-        return f"package {self.package_name}\n\n" + \
-            "\n".join(self.annotations) + \
-            f"\nmodule {self.module_name}" + ' {\n' + \
-            "\n".join(f"\tsource \"{src}\"" for src in self.sources) + "\n\n" + \
-            "\n".join(f"\t{'' if runtime else '@NoRuntime '}depends {dep}" for runtime,
-                      dep in self.dependencies) + "\n}"
+        self.modbus_flag = False
 
     def save(self, path):
+        loc_dict = {"module_name" : self.module_name}
+
+        if self.modbus_flag:
+            loc_dict["softplc_type"] = "sofplc_modbus"
+            loc_dict["build_deps"] = "@BuildDepends(third_party.lib.libmodbus)"
+            loc_dict["deps"] = '''@NoRuntime depends embox.compat.posix.pthreads
+	@NoRuntime depends third_party.lib.libmodbus'''
+            loc_dict["headers"] = '''@IncludeExport(path="")
+	source "MB_0.h"'''
+        else:
+            loc_dict["softplc_type"] = "sofplc"
+            loc_dict["build_deps"] = ""
+            loc_dict["deps"] = ""
+            loc_dict["headers"] = ""
+        Mybuild_filename =  os.path.join(os.path.split(__file__)[0], "Mybuild")
+        mybuild = open(Mybuild_filename).read() % loc_dict
         f = open(path, "w")
-        f.write(str(self))
+        f.write(mybuild)
         f.close()
