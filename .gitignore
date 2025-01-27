@@ -18,5 +18,3 @@ C_runtime/**/*.d
 C_runtime/**/*.o
 beremiz_runtime
 **/tmp/**
-
-plcopen/Embox_Function_Blocks.xml
